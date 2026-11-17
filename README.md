@@ -1,38 +1,33 @@
 # Turbofan Remaining Useful Life
 
-An engine-group holdout RUL regression baseline with rolling sensor features, capped targets, and saved predictions.
+A reproducible NASA C-MAPSS prognostics benchmark with engine-disjoint evaluation and a fixed 100-cycle censor point.
 
-> **Portfolio prototype.** Code is provided; no benchmark results are claimed until you run it on the cited data and record the output.
-
-## Use case
-
-An engine-group holdout RUL regression baseline with rolling sensor features, capped targets, and saved predictions. The command below reads a local data export, applies a transparent baseline, writes holdout or decision-support outputs, and saves the fitted model where applicable.
-
-## Data and provenance
-
-[NASA C-MAPSS engine simulator data](https://data.nasa.gov/dataset/c-mapss-aircraft-engine-simulator-data). A local C-MAPSS run-to-failure training file such as `train_FD001.txt`; the repository does not redistribute NASA data. Dataset files are not bundled. Respect the source terms and cite the dataset when publishing results.
-
-## Quick start
+## Dataset and run
 
 ```bash
 python -m venv .venv
 # Windows: .venv\\Scripts\\activate
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-# Download/prepare the source data locally, then run:
-python main.py --train data/train_FD001.txt --out outputs
+python fetch_data.py
+python benchmark.py
 ```
 
-## Outputs
+The fetcher retrieves NASA's C-MAPSS archive and extracts the FD001 run-to-failure training file. Source and row-level data remain local and are excluded from Git.
 
-The `outputs/` directory contains the model-specific results (metrics and/or ranked CSV) and a serialized estimator where applicable. Outputs are reproducible with the same input, package versions, and random seed. The repository intentionally excludes downloaded data and generated artifacts.
+## Evaluation
 
-## Evaluation and operating notes
+Remaining useful life is evaluated at a fixed cycle 100 for held-out engines. All earlier measurements for training engines are used to fit a Random Forest with trailing 10-cycle sensor statistics. Test engines have no overlap with training engines. The report compares against the training engines' median RUL at cycle 100 and includes an asymmetric NASA-style score.
 
-C-MAPSS is simulated, not fleet evidence. NASA currently notes access restrictions on its landing page; check the official source before downloading. This model must not be used for maintenance decisions without validation on real fleet data.
+See `reports/benchmark.json` for the measured results and SHA-256 fingerprints.
 
-For a production review, preserve a time-based, untouched holdout; compare against a simple business baseline; inspect calibration and subgroup error; document data lineage; and monitor drift. The included baseline is not a production service.
+## Limits
 
-## License
+C-MAPSS is simulator-generated, not observed commercial fleet data. FD001 has one simulated operating condition and one simulated fault mode. Holding out engines within FD001 does not establish performance on other operating conditions, faults, engines, or real fleets. The fixed cycle-100 evaluation does not establish an alert or maintenance policy. Do not use these results for aviation maintenance decisions without validation on authorized fleet data.
 
-No code license file is included yet. Third-party datasets remain subject to their original terms.
+## Source
+
+A. Saxena and K. Goebel (2008), “Turbofan Engine Degradation Simulation Data Set,” NASA Ames Prognostics Data Repository. NASA describes the trajectories as generated using the C-MAPSS simulation. [NASA PCoE data repository](https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/).
+
+No code license file is included yet. Dataset terms are governed by NASA's source.
+
