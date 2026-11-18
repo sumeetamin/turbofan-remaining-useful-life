@@ -17,7 +17,7 @@ The fetcher retrieves NASA's C-MAPSS archive and extracts the FD001 run-to-failu
 
 ## Evaluation
 
-Remaining useful life is evaluated at a fixed cycle 100 for held-out engines. All earlier measurements for training engines are used to fit a Random Forest with trailing 10-cycle sensor statistics. Test engines have no overlap with training engines. The report compares against the training engines' median RUL at cycle 100 and includes an asymmetric NASA-style score.
+RUL labels are capped at 125 cycles for both training and scoring. At the fixed cycle-100 evaluation, 9 of 25 held-out engines had raw RUL above 125; reported MAE measures capped labels, not uncapped remaining life. All earlier measurements for training engines are used to fit a Random Forest with trailing 10-cycle sensor statistics. Test engines have no overlap with training engines. The report compares against the training engines' median RUL at cycle 100 and includes an asymmetric NASA-style score.
 
 See `reports/benchmark.json` for the measured results and SHA-256 fingerprints.
 
