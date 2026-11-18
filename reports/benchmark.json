@@ -1,7 +1,7 @@
 {
   "dataset": "NASA C-MAPSS Turbofan Engine Degradation Simulation, FD001",
   "simulation_scope": "Single operating condition, one simulated fault mode, run-to-failure engine trajectories.",
-  "target": "Remaining cycles to simulated failure, capped at 125 for training",
+  "target": "Remaining cycles to simulated failure, capped at 125 for both training and evaluation; MAE is against capped labels",
   "evaluation": {
     "split": "Seeded engine-level 75/25 holdout; no engine IDs cross partitions.",
     "censor_cycle": 100,
