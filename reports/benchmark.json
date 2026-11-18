@@ -1,7 +1,7 @@
 {
   "dataset": "NASA C-MAPSS Turbofan Engine Degradation Simulation, FD001",
   "simulation_scope": "Single operating condition, one simulated fault mode, run-to-failure engine trajectories.",
-  "target": "Remaining cycles to simulated failure, capped at 125 for both training and evaluation; MAE is against capped labels",
+  "target": "Remaining cycles to simulated failure; model is trained on RUL capped at 125 cycles, then evaluated against both capped and uncapped cycle-100 labels",
   "evaluation": {
     "split": "Seeded engine-level 75/25 holdout; no engine IDs cross partitions.",
     "censor_cycle": 100,
@@ -83,9 +83,14 @@
   "method": "300-tree RandomForestRegressor with trailing 10-cycle sensor means/stds; test prediction uses only measurements through cycle 100.",
   "test_metrics": {
     "train_cycle_100_median_baseline_mae_cycles": 27.8,
-    "model_mae_cycles": 15.770374708994702,
-    "model_rmse_cycles": 19.16266208570266,
-    "model_nasa_asymmetric_score": 162.16356790722628
+    "model_mae_cycles": 15.770374708994705,
+    "model_rmse_cycles": 19.162662085702664,
+    "model_nasa_asymmetric_score_on_capped_labels": 162.1635679072262,
+    "model_raw_target_mae_cycles": 25.530374708994703,
+    "median_baseline_raw_target_mae_cycles": 37.56,
+    "test_engines_raw_rul_above_125": 9,
+    "test_engines_raw_rul_min_cycles": 35,
+    "test_engines_raw_rul_max_cycles": 175
   },
   "source_file_sha256": "963b5e22825b34d8b21c69e1aeb4af3e647050eb672ee8834ba4b5d91d2de0f8",
   "source_archive_sha256": "c9c5dec12a945a82e8bb4446589d7fb3cc057b5e5d81fa1a12e25ee9912ad3b2",
@@ -94,7 +99,7 @@
     "FD001 covers one operating condition and one simulated fault mode.",
     "The benchmark holds out engines from the same simulated subset; it is not an external-condition or external-fleet test.",
     "A single cycle-100 prediction is evaluated; no maintenance policy or alert threshold is assessed.",
+    "The model is trained on capped targets; raw-target MAE is included to show the effect of scoring those capped predictions against uncapped RUL.",
     "Do not use for aviation maintenance decisions without validation on authorized real fleet data."
   ]
 }
-
