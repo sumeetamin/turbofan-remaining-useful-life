@@ -23,11 +23,31 @@ def nasa_score(y_true, y_pred):
     return float(np.where(error < 0, np.expm1(-error / 13.0), np.expm1(error / 10.0)).sum())
 
 
+def score_predictions(y_capped, y_raw, prediction, baseline):
+    """Report capped and uncapped cycle-100 errors separately."""
+    y_capped = np.asarray(y_capped)
+    y_raw = np.asarray(y_raw)
+    prediction = np.asarray(prediction)
+    baseline = np.asarray(baseline)
+    return {
+        "train_cycle_100_median_baseline_mae_cycles": float(mean_absolute_error(y_capped, baseline)),
+        "model_mae_cycles": float(mean_absolute_error(y_capped, prediction)),
+        "model_rmse_cycles": float(mean_squared_error(y_capped, prediction) ** 0.5),
+        "model_nasa_asymmetric_score_on_capped_labels": nasa_score(y_capped, prediction),
+        "model_raw_target_mae_cycles": float(mean_absolute_error(y_raw, prediction)),
+        "median_baseline_raw_target_mae_cycles": float(mean_absolute_error(y_raw, baseline)),
+        "test_engines_raw_rul_above_125": int((y_raw > 125).sum()),
+        "test_engines_raw_rul_min_cycles": int(y_raw.min()),
+        "test_engines_raw_rul_max_cycles": int(y_raw.max()),
+    }
+
+
 def main():
     source = Path("data/train_FD001.txt")
     df = load(source)
     max_cycle = df.groupby("unit").cycle.transform("max")
-    df["rul"] = (max_cycle - df.cycle).clip(upper=125)
+    df["raw_rul"] = max_cycle - df.cycle
+    df["rul"] = df["raw_rul"].clip(upper=125)
     features = ["cycle", "op1", "op2", "op3", *SENSORS]
     for col in SENSORS:
         grouped = df.groupby("unit")[col]
@@ -49,6 +69,7 @@ def main():
         raise SystemExit("No training or test engines reach the fixed 100-cycle censor point.")
     y_train = train_snap.rul
     y_test = test_snap.rul
+    raw_y_test = test_snap.raw_rul
     model = RandomForestRegressor(
         n_estimators=300, min_samples_leaf=2, max_features=0.8,
         n_jobs=-1, random_state=42,
@@ -60,7 +81,7 @@ def main():
     report = {
         "dataset": "NASA C-MAPSS Turbofan Engine Degradation Simulation, FD001",
         "simulation_scope": "Single operating condition, one simulated fault mode, run-to-failure engine trajectories.",
-        "target": "Remaining cycles to simulated failure, capped at 125 for training",
+        "target": "Remaining cycles to simulated failure; model is trained on RUL capped at 125 cycles, then evaluated against both capped and uncapped cycle-100 labels",
         "evaluation": {
             "split": "Seeded engine-level 75/25 holdout; no engine IDs cross partitions.",
             "censor_cycle": cutoff,
@@ -72,12 +93,7 @@ def main():
         },
         "features": features,
         "method": "300-tree RandomForestRegressor with trailing 10-cycle sensor means/stds; test prediction uses only measurements through cycle 100.",
-        "test_metrics": {
-            "train_cycle_100_median_baseline_mae_cycles": float(mean_absolute_error(y_test, baseline)),
-            "model_mae_cycles": float(mean_absolute_error(y_test, prediction)),
-            "model_rmse_cycles": float(mean_squared_error(y_test, prediction) ** 0.5),
-            "model_nasa_asymmetric_score": nasa_score(y_test, prediction),
-        },
+        "test_metrics": score_predictions(y_test, raw_y_test, prediction, baseline),
         "source_file_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "source_archive_sha256": hashlib.sha256(Path("data/cmapss.zip").read_bytes()).hexdigest(),
         "limitations": [
@@ -85,6 +101,7 @@ def main():
             "FD001 covers one operating condition and one simulated fault mode.",
             "The benchmark holds out engines from the same simulated subset; it is not an external-condition or external-fleet test.",
             "A single cycle-100 prediction is evaluated; no maintenance policy or alert threshold is assessed.",
+            "The model is trained on capped targets; raw-target MAE is included to show the effect of scoring those capped predictions against uncapped RUL.",
             "Do not use for aviation maintenance decisions without validation on authorized real fleet data.",
         ],
     }
