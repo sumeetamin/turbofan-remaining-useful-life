@@ -17,7 +17,7 @@ The fetcher retrieves NASA's C-MAPSS archive and extracts the FD001 run-to-failu
 
 ## Evaluation
 
-RUL labels are capped at 125 cycles for both training and scoring. At the fixed cycle-100 evaluation, 9 of 25 held-out engines had raw RUL above 125; reported MAE measures capped labels, not uncapped remaining life. All earlier measurements for training engines are used to fit a Random Forest with trailing 10-cycle sensor statistics. Test engines have no overlap with training engines. The report compares against the training engines' median RUL at cycle 100 and includes an asymmetric NASA-style score.
+The model is trained on RUL labels capped at 125 cycles. At the fixed cycle-100 evaluation, it reports both capped-label MAE and raw-target MAE: the current split gives 15.77 cycles capped and 25.53 cycles raw. Nine of 25 held-out engines had raw RUL above 125. The raw-target result scores capped-model predictions against uncapped truth; it is not an uncapped-trained model. All earlier measurements for training engines are used to fit a Random Forest with trailing 10-cycle sensor statistics. Test engines have no overlap with training engines. The report compares against the training engines' median RUL at cycle 100 and includes an asymmetric NASA-style score.
 
 See `reports/benchmark.json` for the measured results and SHA-256 fingerprints.
 
